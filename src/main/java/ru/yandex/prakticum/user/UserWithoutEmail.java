@@ -1,4 +1,15 @@
 package ru.yandex.prakticum.user;
 
-public class serWithoutEmail {
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@EqualsAndHashCode
+@Builder
+public class UserWithoutEmail {
+    private String password;
+    private String name;
 }
