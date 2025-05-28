@@ -1,5 +1,6 @@
 package ru.yandex.prakticum;
 
+import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
@@ -14,15 +15,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 public class UserLoginTest {
     private final UserClient userClient = new UserClient();
-    private final UserGenerator userGenerator = new UserGenerator();
     private User testUser;
     private String accessToken;
 
     @Before
     public void setUp() {
-        testUser = userGenerator.generateValidUser();
-        Response response = userClient.register(testUser);
-        accessToken = response.body().path("accessToken");
+        testUser = UserGenerator.generateValidUser();
+        accessToken = userClient.register(testUser).body().path("accessToken");
     }
 
     @After
@@ -34,41 +33,47 @@ public class UserLoginTest {
 
     @Test
     @DisplayName("Успешная авторизация пользователя")
+    @Description("Проверка, что пользователь с корректными данными может войти")
     public void shouldLoginSuccessfully() {
-        Response response = userClient.login(testUser);
-        response.then()
+        userClient.login(testUser)
+                .then()
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", equalTo(true));
     }
 
     @Test
     @DisplayName("Авторизация с неправильным паролем")
+    @Description("Проверка текста ошибки при неверном пароле")
     public void shouldNotLoginWithWrongPassword() {
         testUser.setPassword("wrongPassword");
-        Response response = userClient.login(testUser);
-        response.then()
+        userClient.login(testUser)
+                .then()
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
-                .body("success", equalTo(false));
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
     }
 
     @Test
-    @DisplayName("Авторизация с пустым email")
+    @DisplayName("Авторизация без email")
+    @Description("Проверка текста ошибки при пустом email")
     public void shouldNotLoginWithoutEmail() {
         testUser.setEmail(null);
-        Response response = userClient.login(testUser);
-        response.then()
+        userClient.login(testUser)
+                .then()
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
-                .body("success", equalTo(false));
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
     }
 
     @Test
-    @DisplayName("Авторизация с пустым паролем")
+    @DisplayName("Авторизация без пароля")
+    @Description("Проверка текста ошибки при пустом пароле")
     public void shouldNotLoginWithoutPassword() {
         testUser.setPassword(null);
-        Response response = userClient.login(testUser);
-        response.then()
+        userClient.login(testUser)
+                .then()
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
-                .body("success", equalTo(false));
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
     }
 }
-
