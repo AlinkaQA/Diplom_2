@@ -1,5 +1,6 @@
 package ru.yandex.prakticum;
 
+import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
@@ -14,15 +15,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 public class UserUpdateTest {
     private final UserClient userClient = new UserClient();
-    private final UserGenerator userGenerator = new UserGenerator();
     private User originalUser;
     private String accessToken;
 
     @Before
     public void setup() {
-        originalUser = userGenerator.generateValidUser();
-        Response response = userClient.register(originalUser);
-        accessToken = response.body().path("accessToken");
+        originalUser = UserGenerator.generateValidUser();
+        accessToken = userClient.register(originalUser).body().path("accessToken");
     }
 
     @After
@@ -34,6 +33,7 @@ public class UserUpdateTest {
 
     @Test
     @DisplayName("Обновление данных пользователя с токеном")
+    @Description("Проверка, что авторизованный пользователь может обновить свои данные")
     public void shouldUpdateUserWithToken() {
         User updatedUser = User.builder()
                 .email("upd_" + originalUser.getEmail())
@@ -41,15 +41,15 @@ public class UserUpdateTest {
                 .name("Обновлённый")
                 .build();
 
-        Response response = userClient.updateUser(updatedUser, accessToken);
-
-        response.then()
+        userClient.updateUser(updatedUser, accessToken)
+                .then()
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", equalTo(true));
     }
 
     @Test
     @DisplayName("Обновление данных пользователя без токена должно быть запрещено")
+    @Description("Проверка, что запрос на обновление без токена возвращает ошибку")
     public void shouldNotUpdateUserWithoutToken() {
         User updatedUser = User.builder()
                 .email("upd_" + originalUser.getEmail())
@@ -57,9 +57,8 @@ public class UserUpdateTest {
                 .name("БезТокена")
                 .build();
 
-        Response response = userClient.updateUserWithoutToken(updatedUser);
-
-        response.then()
+        userClient.updateUserWithoutToken(updatedUser)
+                .then()
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body("success", equalTo(false))
                 .body("message", equalTo("You should be authorised"));
